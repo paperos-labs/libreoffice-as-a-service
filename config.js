@@ -5,16 +5,7 @@
 
 let config = module.exports;
 
-config.NODE_ENV = process.env.NODE_ENV;
-config.PORT = process.env.PORT;
-config.API_TOKEN = process.env.API_TOKEN;
+config.NODE_ENV = process.env.NODE_ENV || 'development';
+config.PORT = process.env.PORT || '5227';
 
-// CORS
-config.CORS_DOMAINS = (process.env.CORS_DOMAINS || '')
-  .trim()
-  .split(/[,\s]+/g)
-  .filter(Boolean);
-config.CORS_METHODS = (process.env.CORS_METHODS || '')
-  .trim()
-  .split(/[,\s]+/g)
-  .filter(Boolean);
+config.API_TOKEN = process.env.LAAS_API_TOKEN || process.env.API_TOKEN || '';
