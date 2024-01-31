@@ -11,14 +11,15 @@ module.exports = function (fastify, opts, done) {
   fastify.addContentTypeParser('*', function (request, payload, done) {
     // skip parsing so that the handler has access to the stream
     //request.raw.pause();
-    console.log('rando type?');
+    console.log('[DEBUG] rando type?');
     console.log(request.raw.rawHeaders);
     done();
   });
 
   async function receive(req, name, format = 'pdf') {
-    let dirname = await Fsp.mkdtemp(Path.join(tmpdir, 'libreoffice-convert-'));
-    console.log('tmpdir:', dirname);
+    let tmpPrefix = Path.join(tmpdir, 'laas-source-');
+    let dirname = await Fsp.mkdtemp(tmpPrefix);
+    console.info('[receive] incoming tmpdir:', dirname);
     let dst = Path.join(dirname, name);
     let stream = Fs.createWriteStream(dst);
 
@@ -27,7 +28,7 @@ module.exports = function (fastify, opts, done) {
       req.on('readable', function () {
         let chunk;
         while ((chunk = req.read())) {
-          console.log('chunk', chunk.length);
+          console.log('[DEBUG] chunk.length', chunk.length);
         }
       });
       req.on('error', reject);
@@ -40,8 +41,8 @@ module.exports = function (fastify, opts, done) {
       });
     });
 
-    let pdfPath = await convert(originalPath, format);
-    return pdfPath;
+    let dlPath = await convert(originalPath, format);
+    return dlPath;
   }
 
   // POST /api/convert/:name (ex: report.docx)

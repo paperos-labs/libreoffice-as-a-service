@@ -72,11 +72,14 @@ async function convert(inputPath, format, options) {
     inputPath,
   ];
 
-  console.log(cmd, args.join(' '));
+  console.info('[soffice]', cmd, args.join(' '));
   await exec(cmd, args, { TODO_log: false });
-  let basename = Path.basename(inputPath, Path.extname(inputPath));
-  console.log('[soffice] basename:', basename);
-  return Path.join(tmpDir, `${basename}.${format}`);
+
+  let inputExt = Path.extname(inputPath);
+  let basename = Path.basename(inputPath, inputExt);
+  console.info('[soffice] basename:', basename);
+  let outFile = Path.join(tmpDir, `${basename}.${format}`);
+  return outFile;
 }
 
 module.exports = convert;
