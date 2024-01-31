@@ -50,7 +50,7 @@ module.exports = function (fastify, opts, done) {
     let format = request.params.format;
 
     // content-disposition filename hint
-    let filename = request.query.filename;
+    let filename = Path.basename(request.query.filename);
     if (!filename) {
       throw new Error("BAD_REQUEST: 'filename' should be the name of the source file");
     }
