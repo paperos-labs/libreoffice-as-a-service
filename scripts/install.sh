@@ -53,6 +53,7 @@ PORT="${PORT:-5227}"
 export PORT
 
 bash scripts/01-libreoffice.sh
+bash scripts/01-pdftotext.sh
 bash scripts/01-caddy.sh
 bash scripts/02-enable-site.sh "${my_domain}.${my_zone}" "${PORT}" "$(pwd)/public/"
 if [[ ! -e node_modules ]]; then
