@@ -6,7 +6,7 @@ my_version="6-4"
 
 if [[ -z "$(command -v libreoffice)" ]]; then
     # TODO make this a microservice
-    # TODO investigate unoconv, see https://askubuntu.com/a/398499
+    # TODO investigate unoconv (now unoserver), see https://askubuntu.com/a/398499
     export DEBIAN_FRONTEND=noninteractive
 
     sudo add-apt-repository -y ppa:libreoffice/ppa
