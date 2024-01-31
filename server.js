@@ -22,6 +22,7 @@ fastify.register(fastifyStatic, {
   prefix: '/',
 });
 
+fastify.register(require('./routes/versions.js'), { prefix: '/api/versions' });
 fastify.register(require('./routes/convert.js'), { prefix: '/api/convert' });
 
 if (require.main === module) {
