@@ -11,8 +11,8 @@
   "author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
   "license": "MPL-2.0",
   "dependencies": {
-    "dotenv": "^10.0.0",
-    "fastify": "^3.24.0",
-    "fastify-static": "^4.5.0"
+    "dotenv": "^16.4.1",
+    "fastify": "^3.29.5",
+    "fastify-static": "^4.7.0"
   }
 }
