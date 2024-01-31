@@ -1,12 +1,15 @@
 'use strict';
 
-let spawn = require('child_process').spawn;
+let Os = require('os');
+let Path = require('path');
+let Fsp = require('fs').promises;
+let ChildProcess = require('child_process');
 
 async function exec(cmd, args, opts) {
   return await new Promise(function (resolve, reject) {
     let chunks = [];
 
-    let proc = spawn(cmd, args, {
+    let proc = ChildProcess.spawn(cmd, args, {
       windowsHide: true,
       shell: false,
       timeout: 60 * 1000,
@@ -49,39 +52,37 @@ async function exec(cmd, args, opts) {
  * @params String format - the target format (typically file extension, such as 'pdf')
  * @returns Promise<string> - full path of output file
  */
-async function convert(inputPath, format, options) {
-  let Os = require('os');
-  let Path = require('path');
-  let Fsp = require('fs').promises;
-
-  let cmd = 'soffice';
-  // ex: /tmp/soffice-abc123
-  let tmpPrefix = Path.join(Os.tmpdir(), 'soffice-');
+async function convert(inputPath, options) {
+  let cmd = 'pdftotext';
+  // ex: /tmp/pdftotext-abc123
+  let tmpPrefix = Path.join(Os.tmpdir(), 'pdftotext-');
   let tmpDir = await Fsp.mkdtemp(tmpPrefix);
-  if (options?.filter) {
-    // ex:
-    //   --convert-to pdf:"Special Filter Info"
-    //   --convert-to txt:"Text"
-    format += `:"${options.filter}"`;
-  }
-  let args = [
-    `-env:UserInstallation=file://${tmpDir}`,
-    '--headless',
-    '--convert-to',
-    format,
-    '--outdir',
-    tmpDir,
-    inputPath,
-  ];
-
-  console.info('[soffice]', cmd, args.join(' '));
-  await exec(cmd, args, { TODO_log: false });
 
   let inputExt = Path.extname(inputPath);
   let basename = Path.basename(inputPath, inputExt);
-  console.info('[soffice] basename:', basename);
-  let outFile = Path.join(tmpDir, `${basename}.${format}`);
-  return outFile;
+  let outPath = Path.join(tmpDir, `${basename}.txt`);
+
+  let args = ['-eol', 'unix'];
+  if (options?.dpi) {
+    // TODO
+    //
+    // -f <int>             : first page to convert
+    // -l <int>             : last page to convert
+    // -r <fp>              : resolution, in DPI (default is 72)
+    // Unit is "dots", so 72 dots is 1" (at 72 DPI)
+    // -x <int>             : x-coordinate of the crop area top left corner
+    // -y <int>             : y-coordinate of the crop area top left corner
+    // -W <int>             : width of crop area in pixels (default is 0)
+    // -H <int>             : height of crop area in pixels (default is 0)
+  }
+  args.push(inputPath);
+  args.push(outPath);
+
+  console.info('[pdftotext]', cmd, args.join(' '));
+  await exec(cmd, args, { TODO_log: false });
+  console.log('[pdftotext] out:', outPath);
+
+  return outPath;
 }
 
 module.exports = convert;
@@ -90,17 +91,11 @@ if (require.main === module) {
   let input = process.argv[2];
   let outfile = process.argv[3];
   if (!input || !outfile) {
-    console.error('Usage: node ./soffice.js input.docx output.pdf');
+    console.error('Usage: node ./pdftotext.js input.pdf output.txt');
     process.exit(1);
   }
 
-  let Path = require('path');
-  let format = Path.extname(outfile).slice(1);
-
-  // soffice can *technically* support reading from stdin,
-  // but probably not in a more useful way that writing a tmp file to disk.
-  // See https://unix.stackexchange.com/a/264127
-  convert(input, format)
+  convert(input)
     .then(async function (out) {
       let Fsp = require('fs').promises;
       await Fsp.rename(out, outfile);

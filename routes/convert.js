@@ -5,7 +5,23 @@ let Path = require('path');
 let Fs = require('fs');
 let Fsp = require('fs').promises;
 
-let convert = require('../soffice.js');
+let sofficeConvert = require('../soffice.js');
+let pdftotextConvert = require('../pdftotext.js');
+
+async function convert(originalPath, format) {
+  let fromExt = Path.extname(originalPath);
+  fromExt = fromExt.toLowerCase();
+
+  let convertedPath;
+  let isPdfToTxt = fromExt === '.pdf' && format === 'txt';
+  if (isPdfToTxt) {
+    convertedPath = await pdftotextConvert(originalPath);
+    return convertedPath;
+  }
+
+  convertedPath = await sofficeConvert(originalPath, format);
+  return convertedPath;
+}
 
 module.exports = function (fastify, opts, done) {
   fastify.addContentTypeParser('*', function (request, payload, done) {
@@ -41,8 +57,7 @@ module.exports = function (fastify, opts, done) {
       });
     });
 
-    let dlPath = await convert(originalPath, format);
-    return dlPath;
+    return originalPath;
   }
 
   // POST /api/convert/:name (ex: report.docx)
@@ -56,15 +71,17 @@ module.exports = function (fastify, opts, done) {
       throw new Error("BAD_REQUEST: 'filename' should be the name of the source file");
     }
 
-    let dst = await receive(request.raw, filename, format);
-    let stream = Fs.createReadStream(dst);
+    let originalPath = await receive(request.raw, filename, format);
+    let convertedPath = await convert(originalPath, format);
+    let stream = Fs.createReadStream(convertedPath);
     stream.on('end', async function () {
-      await Fsp.unlink(dst).catch(function (err) {
-        console.error(`Error: failed to remove ${dst}`);
+      await Fsp.unlink(convertedPath).catch(function (err) {
+        console.error(`Error: failed to remove ${convertedPath}`);
       });
     });
 
-    let suggestedName = Path.basename(dst).replace(/"/g, '\\"');
+    let suggestedName = Path.basename(convertedPath);
+    suggestedName = suggestedName.replace(/"/g, '\\"');
     reply.header('Content-Disposition', `attachment; filename="${suggestedName}"`);
     reply.send(stream);
   });
