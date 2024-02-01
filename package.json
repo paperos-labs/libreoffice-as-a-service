@@ -4,8 +4,9 @@
   "description": "```bash npx docx2pdf ```",
   "main": "soffice.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "bump": "npm version -m \"chore(release): bump to v%s\"",
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
