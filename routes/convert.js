@@ -5,23 +5,7 @@ let Path = require('path');
 let Fs = require('fs');
 let Fsp = require('fs').promises;
 
-let sofficeConvert = require('../soffice.js');
-let pdftotextConvert = require('../pdftotext.js');
-
-async function convert(originalPath, format) {
-  let fromExt = Path.extname(originalPath);
-  fromExt = fromExt.toLowerCase();
-
-  let convertedPath;
-  let isPdfToTxt = fromExt === '.pdf' && format === 'txt';
-  if (isPdfToTxt) {
-    convertedPath = await pdftotextConvert(originalPath);
-    return convertedPath;
-  }
-
-  convertedPath = await sofficeConvert(originalPath, format);
-  return convertedPath;
-}
+let Convert = require('../');
 
 module.exports = function (fastify, opts, done) {
   fastify.addContentTypeParser('*', function (request, payload, done) {
@@ -72,7 +56,7 @@ module.exports = function (fastify, opts, done) {
     }
 
     let originalPath = await receive(request.raw, filename, format);
-    let convertedPath = await convert(originalPath, format);
+    let convertedPath = await Convert.convert(originalPath, format);
     let stream = Fs.createReadStream(convertedPath);
     stream.on('end', async function () {
       await Fsp.unlink(convertedPath).catch(function (err) {
