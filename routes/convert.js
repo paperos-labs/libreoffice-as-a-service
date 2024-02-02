@@ -8,6 +8,16 @@ let Fsp = require('fs').promises;
 let Config = require('../config.js');
 let Convert = require('../');
 
+/** @typedef {import('fastify').FastifyInstance} FastifyInstance */
+/** @typedef {import('fastify').FastifyRequest} FastifyRequest */
+/** @typedef {import('fastify').FastifyReply} FastifyReply */
+/** @typedef {import('fastify').HookHandlerDoneFunction} FastifyDone */
+
+/**
+ * @param {FastifyInstance} fastify
+ * @param {any} opts
+ * @param {FastifyDone} done
+ */
 module.exports = function (fastify, opts, done) {
   fastify.addContentTypeParser('*', function (request, payload, done2) {
     // skip parsing so that the handler has access to the stream
@@ -17,6 +27,11 @@ module.exports = function (fastify, opts, done) {
     done2(null, undefined);
   });
 
+  /**
+   * @param {import('http').IncomingMessage} req
+   * @param {String} name
+   * @param {String} [format]
+   */
   async function receive(req, name, format = 'pdf') {
     let tmpPrefix = Path.join(tmpdir, 'laas-source-');
     let dirname = await Fsp.mkdtemp(tmpPrefix);
@@ -46,47 +61,58 @@ module.exports = function (fastify, opts, done) {
   }
 
   // POST /api/convert/:name (ex: report.docx)
-  fastify.post('/:format', async function (request, reply) {
-    {
-      let token = (request.raw.headers.authorization || '').split(' ')[1];
-      let tokenMatches = secureCompare(token, Config.API_TOKEN);
-      if (!tokenMatches) {
-        let skipToken = '*' === Config.API_TOKEN;
-        if (!skipToken) {
-          reply.code(401);
-          return { success: false, error: 'UNAUTHORIZED' };
+  fastify.post(
+    '/:format',
+    /**
+     * @param {FastifyRequest} request
+     * @param {FastifyReply} reply
+     */
+    async function (request, reply) {
+      {
+        let token = (request.raw.headers.authorization || '').split(' ')[1];
+        let tokenMatches = secureCompare(token, Config.API_TOKEN);
+        if (!tokenMatches) {
+          let skipToken = '*' === Config.API_TOKEN;
+          if (!skipToken) {
+            reply.code(401);
+            return { success: false, error: 'UNAUTHORIZED' };
+          }
         }
       }
-    }
 
-    // target format
-    //@ts-ignore - not sure why it's not picking up the type
-    let format = request.params.format;
+      // target format
+      //@ts-ignore - not sure why it's not picking up the type
+      let format = request.params.format;
 
-    //@ts-ignore - not sure why it's not picking up the type
-    let filename = request.query.filename;
+      //@ts-ignore - not sure why it's not picking up the type
+      let filename = request.query.filename;
 
-    // content-disposition filename hint
-    filename = Path.basename(filename);
-    if (!filename) {
-      throw new Error("BAD_REQUEST: 'filename' should be the name of the source file");
-    }
+      // content-disposition filename hint
+      filename = Path.basename(filename);
+      if (!filename) {
+        throw new Error("BAD_REQUEST: 'filename' should be the name of the source file");
+      }
 
-    let originalPath = await receive(request.raw, filename, format);
-    let convertedPath = await Convert.convert(originalPath, format);
-    let stream = Fs.createReadStream(convertedPath);
-    stream.on('end', async function () {
-      await Fsp.unlink(convertedPath).catch(function (err) {
-        console.error(`Error: failed to remove ${convertedPath}`);
+      let originalPath = await receive(request.raw, filename, format);
+      let convertedPath = await Convert.convert(originalPath, format);
+      let stream = Fs.createReadStream(convertedPath);
+      stream.on('end', async function () {
+        await Fsp.unlink(convertedPath).catch(function (err) {
+          console.error(`Error: failed to remove ${convertedPath}`);
+        });
       });
-    });
 
-    let suggestedName = Path.basename(convertedPath);
-    suggestedName = suggestedName.replace(/"/g, '\\"');
-    reply.header('Content-Disposition', `attachment; filename="${suggestedName}"`);
-    reply.send(stream);
-  });
+      let suggestedName = Path.basename(convertedPath);
+      suggestedName = suggestedName.replace(/"/g, '\\"');
+      reply.header('Content-Disposition', `attachment; filename="${suggestedName}"`);
+      reply.send(stream);
+    },
+  );
 
+  /**
+   * @param {String} a
+   * @param {String} b
+   */
   function secureCompare(a, b) {
     if (!a && !b) {
       throw new Error('[secure compare] reference string should not be empty');
