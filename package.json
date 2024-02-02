@@ -1,6 +1,6 @@
 {
   "name": "libreoffice-as-a-service",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Uses libreoffice and poppler-utils to convert between document formats",
   "main": "libreoffice-as-a-service.js",
   "scripts": {
