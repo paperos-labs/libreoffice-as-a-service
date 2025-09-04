@@ -53,16 +53,47 @@ open http://127.0.0.1:5227/
 
 ## Demo cURL
 
-```bash
-BASE_URL="http://127.0.0.1:5227"
-
-curl -fS "${BASE_URL}"'/api/convert/pdf?filename=Writing1.docx' \
-    -H 'Content-Type: application/octet-stream' \
-    --data-binary @'fixtures/Writing1.docx' \
-    -o Writing1.pdf
+```sh
+mkdir -p ./fixtures/
+curl -fsSL 'https://github.com/paperos-labs/libreoffice-as-a-service/raw/refs/heads/main/fixtures/Writing1.docx' \
+    -o ./fixtures/Writing1.docx
 ```
 
-**Important**: `-d` is NOT the same as `--data-binary`.
+```sh
+export LAAS_BASE_URL="http://127.0.0.1:5227"
+export LAAS_API_TOKEN="xxxx-xxxx-xxxx-xxxx"
+```
+
+### docx to pdf
+
+```sh
+curl -fS "${LAAS_BASE_URL}"'/api/convert/pdf?filename=Writing1.docx' \
+    -H "Authorization: Bearer ${LAAS_API_TOKEN}" \
+    -H 'Content-Type: application/octet-stream' \
+    --data-binary @'fixtures/Writing1.docx' \
+    -o ./Writing1.pdf
+```
+
+### docx to txt
+
+```sh
+curl -fS "${LAAS_BASE_URL}"'/api/convert/txt?filename=Writing1.docx' \
+    -H "Authorization: Bearer ${LAAS_API_TOKEN}" \
+    --data-binary @'fixtures/Writing1.docx' \
+    -o ./Writing1.docx.txt
+```
+
+### pdf to txt
+
+```sh
+curl -fS "${LAAS_BASE_URL}"'/api/convert/txt?filename=Writing1.pdf' \
+    -H "Authorization: Bearer ${LAAS_API_TOKEN}" \
+    -H 'Content-Type: application/octet-stream' \
+    --data-binary @'./Writing1.pdf' \
+    -o ./Writing1.pdf.txt
+```
+
+**Important**: `-d` is NOT the same as `--data-binary` (the former may strip whitespace).
 
 ## System Requirements for Linux
 
