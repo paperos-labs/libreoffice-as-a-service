@@ -115,7 +115,7 @@ curl -fS "${LAAS_BASE_URL}"'/api/convert/txt?filename=Writing1.pdf' \
 
 ## System Requirements for Linux
 
-- Go 1.21+
+- Go 1.22+
 - LibreOffice v6.4+
 - poppler-utils (for pdftotext)
 

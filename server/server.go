@@ -1,7 +1,10 @@
 package server
 
 import (
+	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/paperos-labs/libreoffice-as-a-service/config"
 )
@@ -16,10 +19,16 @@ func NewMux(cfg *config.Config) http.Handler {
 			return
 		}
 		
-		if r.Method == "POST" && len(r.URL.Path) > 13 && r.URL.Path[:13] == "/api/convert/" {
+		// Check for convert API route
+		if r.Method == "POST" && strings.HasPrefix(r.URL.Path, "/api/convert/") {
 			// Extract format from path
-			format := r.URL.Path[13:]
-			// Create a new request with PathValue support
+			format := strings.TrimPrefix(r.URL.Path, "/api/convert/")
+			// Validate format is non-empty and doesn't contain path separators
+			if format == "" || strings.Contains(format, "/") {
+				http.Error(w, "Invalid format parameter", http.StatusBadRequest)
+				return
+			}
+			// Set the format as a path value
 			r.SetPathValue("format", format)
 			LoggingMiddleware(AuthMiddleware(cfg, ConvertHandler(cfg)))(w, r)
 			return
@@ -34,6 +43,8 @@ func NewMux(cfg *config.Config) http.Handler {
 // LoggingMiddleware logs HTTP requests
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		
 		// Create a response writer that captures the status code
 		lrw := &loggingResponseWriter{
 			ResponseWriter: w,
@@ -43,8 +54,8 @@ func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(lrw, r)
 
 		// Log request details
-		// Using a simpler format than fastify's default logger
-		// Could be enhanced with a proper logging library if needed
+		duration := time.Since(start)
+		log.Printf("%s %s - %d (%v)", r.Method, r.URL.Path, lrw.statusCode, duration)
 	}
 }
 
