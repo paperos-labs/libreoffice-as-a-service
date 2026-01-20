@@ -5,15 +5,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-
-	"github.com/paperos-labs/libreoffice-as-a-service/config"
 )
 
-// AuthMiddleware validates the Bearer token
-func AuthMiddleware(cfg *config.Config, next http.HandlerFunc) http.HandlerFunc {
+// RequireAuth is middleware that validates the Bearer token
+func (s *Server) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Skip token check if API_TOKEN is "*" or empty
-		if cfg.APIToken == "*" || cfg.APIToken == "" {
+		if s.apiToken == "*" || s.apiToken == "" {
 			next(w, r)
 			return
 		}
@@ -35,7 +33,7 @@ func AuthMiddleware(cfg *config.Config, next http.HandlerFunc) http.HandlerFunc 
 		token := parts[1]
 
 		// Constant-time comparison to prevent timing attacks
-		if !secureCompare(token, cfg.APIToken) {
+		if !secureCompare(token, s.apiToken) {
 			sendJSONError(w, http.StatusUnauthorized, "UNAUTHORIZED")
 			return
 		}

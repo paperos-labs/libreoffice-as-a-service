@@ -2,9 +2,9 @@
 set -e
 set -u
 
-if [[ -z "$(command -v node)" ]]; then
-    curl https://webinstall.dev/node@16 | bash
+if [[ -z "$(command -v go)" ]]; then
+    curl https://webinstall.dev/go@stable | bash
 fi
-export PATH="$HOME/.local/opt/node/bin:${PATH}"
+export PATH="$HOME/.local/opt/go/bin:$HOME/go/bin:${PATH}"
 
-npm ci --only=production
+go build -o libreoffice-as-a-service .
