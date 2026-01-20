@@ -25,7 +25,7 @@ async function convertDocument(fileData, filename, format, options = {}) {
   };
 
   if (apiToken) {
-    headers['Authorization'] = `******`;
+    headers['Authorization'] = `Bearer ${apiToken}`;
   }
 
   const response = await fetch(url.toString(), {
