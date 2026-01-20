@@ -31,11 +31,27 @@ echo "API_TOKEN=$(openssl rand -hex 8)" >> .env
 ```
 -->
 
+### Build
+
+```bash
+# Install Go if needed (using Webi)
+curl https://webinstall.dev/go@stable | bash
+export PATH="$HOME/.local/opt/go/bin:$HOME/go/bin:${PATH}"
+
+# Build the application
+go build -o libreoffice-as-a-service .
+```
+
 ### Run
 
 ```bash
-npm ci --only=production
-npm run start
+./libreoffice-as-a-service
+```
+
+Or with custom port and bind address:
+
+```bash
+./libreoffice-as-a-service --port 5227 --bind 0.0.0.0
 ```
 
 ### Install
@@ -95,21 +111,56 @@ curl -fS "${LAAS_BASE_URL}"'/api/convert/txt?filename=Writing1.pdf' \
 
 **Important**: `-d` is NOT the same as `--data-binary` (the former may strip whitespace).
 
-## System Requirements for Linux
+## Example Scripts
 
-- node v16+
-- LibreOffice v6.4+
+Example scripts are provided in multiple languages:
+
+### Bash (example.sh)
 
 ```bash
-if [[ -z "$(command -v node)" ]]; then
-    curl -fsSL https://webinstall.dev/node@lts | bash
+bash example.sh
+```
+
+### JavaScript/Node.js (example.js)
+
+```bash
+node example.js
+```
+
+### Go (example/main.go)
+
+```bash
+cd example
+go run .
+```
+
+All examples convert `fixtures/Writing1.docx` to `Writing1.pdf`. Set `LAAS_BASE_URL` and `LAAS_API_TOKEN` environment variables to customize.
+
+## System Requirements for Linux
+
+- Go 1.22+
+- LibreOffice v6.4+
+- poppler-utils (for pdftotext)
+
+```bash
+# Install Go
+if [[ -z "$(command -v go)" ]]; then
+    curl -fsSL https://webinstall.dev/go@stable | bash
+    export PATH="$HOME/.local/opt/go/bin:$HOME/go/bin:${PATH}"
 fi
 
+# Install LibreOffice
 if [[ -z "$(command -v libreoffice)" ]]; then
     sudo add-apt-repository -y ppa:libreoffice/ppa
     sudo add-apt-repository -y ppa:libreoffice/libreoffice-6-4
     sudo apt-get -y update
     sudo apt-get install -y libreoffice
+fi
+
+# Install poppler-utils (for pdftotext)
+if [[ -z "$(command -v pdftotext)" ]]; then
+    sudo apt-get -y update
+    sudo apt-get install -y poppler-utils
 fi
 ```
 
@@ -126,19 +177,19 @@ If you install LibreOffice to `~/Applications`, you can add `soffice` to your PA
 2. Install `pathman`
    ```bash
    curl https://webinstall.dev/pathman | bash
-   export PATH="${HOME}.local/bin:${PATH}"
+   export PATH="${HOME}/.local/bin:${PATH}"
    ```
 3. Permanently add `soffice` to your `PATH`
    ```bash
    pathman add /Applications/LibreOffice.app/Contents/MacOS
    ```
 
-Now `node` will be able to find `soffice` and run it the same as on Linux.
+Now Go will be able to find `soffice` and run it the same as on Linux.
 
-**Note**: You can also use Webi to install `node`:
+**Note**: You can also use Webi to install Go:
 
 ```bash
-curl -L https://webinstall.dev/node@lts | bash
+curl -L https://webinstall.dev/go@stable | bash
 ```
 
 ### How to deploy to Digital Ocean

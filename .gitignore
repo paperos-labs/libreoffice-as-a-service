@@ -103,3 +103,14 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Go binary
+/libreoffice-as-a-service
+/example/example
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib

@@ -56,7 +56,7 @@ bash scripts/01-libreoffice.sh
 bash scripts/01-pdftotext.sh
 bash scripts/01-caddy.sh
 bash scripts/02-enable-site.sh "${my_domain}.${my_zone}" "${PORT}" "$(pwd)/public/"
-if [[ ! -e node_modules ]]; then
+if [[ ! -e libreoffice-as-a-service ]]; then
     bash scripts/builder/01-build.sh
 fi
 bash scripts/03-app.sh "${my_domain}.${my_zone}" "${PORT}" "${my_project_name}"

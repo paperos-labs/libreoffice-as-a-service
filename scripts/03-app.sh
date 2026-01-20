@@ -10,10 +10,13 @@ if [[ -z "$(command -v watchexec)" ]]; then
     webi watchexec
 fi
 
-if [[ -z "$(command -v node)" ]]; then
-    webi node@16
+if [[ -z "$(command -v go)" ]]; then
+    webi go@stable
 fi
-export PATH="$HOME/.local/opt/node/bin:${PATH}"
+export PATH="$HOME/.local/opt/go/bin:$HOME/go/bin:${PATH}"
+
+# Build the Go binary
+go build -o libreoffice-as-a-service .
 
 if [[ "development" == "${NODE_ENV:-}" ]]; then
     # stop watchexec first in development environments
@@ -23,11 +26,11 @@ if [[ "development" == "${NODE_ENV:-}" ]]; then
     sudo env PATH="${PATH}" \
         serviceman add --name "${my_servicename}" --system \
         --username "$(whoami)" --path "${PATH}" -- \
-        watchexec -r -e js -- -- \
-        npm run start # -- --port "${my_port}"
+        watchexec -r -e go -- -- \
+        go run . # -- --port "${my_port}"
 else
     sudo env PATH="${PATH}" \
         serviceman add --name "${my_servicename}" --system \
         --username "$(whoami)" --path "${PATH}" -- \
-        npm run start # -- --port "${my_port}"
+        ./libreoffice-as-a-service # -- --port "${my_port}"
 fi
