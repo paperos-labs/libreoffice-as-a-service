@@ -111,6 +111,31 @@ curl -fS "${LAAS_BASE_URL}"'/api/convert/txt?filename=Writing1.pdf' \
 
 **Important**: `-d` is NOT the same as `--data-binary` (the former may strip whitespace).
 
+## Example Scripts
+
+Example scripts are provided in multiple languages:
+
+### Bash (example.sh)
+
+```bash
+bash example.sh
+```
+
+### JavaScript/Node.js (example.js)
+
+```bash
+node example.js
+```
+
+### Go (example/main.go)
+
+```bash
+cd example
+go run .
+```
+
+All examples convert `fixtures/Writing1.docx` to `Writing1.pdf`. Set `LAAS_BASE_URL` and `LAAS_API_TOKEN` environment variables to customize.
+
 ## System Requirements for Linux
 
 - Go 1.22+

@@ -106,6 +106,7 @@ dist
 
 # Go binary
 /libreoffice-as-a-service
+/example/example
 
 # Go build artifacts
 *.exe
