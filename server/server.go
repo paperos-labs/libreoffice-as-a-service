@@ -8,17 +8,27 @@ import (
 
 // NewMux creates a new HTTP request multiplexer with all routes
 func NewMux(cfg *config.Config) http.Handler {
-	mux := http.NewServeMux()
-
-	// Static files
-	fs := http.FileServer(http.Dir("./public"))
-	mux.Handle("/", fs)
-
-	// API routes with logging middleware
-	mux.HandleFunc("GET /api/versions", LoggingMiddleware(VersionsHandler(cfg)))
-	mux.HandleFunc("POST /api/convert/{format}", LoggingMiddleware(AuthMiddleware(cfg, ConvertHandler(cfg))))
-
-	return mux
+	// Create a simple router that dispatches based on path
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check for API routes first
+		if r.Method == "GET" && r.URL.Path == "/api/versions" {
+			LoggingMiddleware(VersionsHandler(cfg))(w, r)
+			return
+		}
+		
+		if r.Method == "POST" && len(r.URL.Path) > 13 && r.URL.Path[:13] == "/api/convert/" {
+			// Extract format from path
+			format := r.URL.Path[13:]
+			// Create a new request with PathValue support
+			r.SetPathValue("format", format)
+			LoggingMiddleware(AuthMiddleware(cfg, ConvertHandler(cfg)))(w, r)
+			return
+		}
+		
+		// Serve static files for everything else
+		fs := http.FileServer(http.Dir("./public"))
+		fs.ServeHTTP(w, r)
+	})
 }
 
 // LoggingMiddleware logs HTTP requests
