@@ -1,62 +1,120 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('fs');
-const http = require('http');
+const fs = require('fs/promises');
 
-const BASE_URL = process.env.LAAS_BASE_URL || 'http://127.0.0.1:5227';
-const API_TOKEN = process.env.LAAS_API_TOKEN || '';
+/**
+ * Convert a document using LibreOffice-as-a-Service
+ * @param {Blob|Buffer} fileData - The file data to convert
+ * @param {string} filename - Original filename
+ * @param {string} format - Target format (e.g., 'pdf', 'txt')
+ * @param {object} options - Configuration options
+ * @param {string} options.baseUrl - API base URL
+ * @param {string} options.apiToken - API authentication token
+ * @returns {Promise<Blob|Buffer>} - The converted file
+ */
+async function convertDocument(fileData, filename, format, options = {}) {
+  const baseUrl = options.baseUrl || 'http://127.0.0.1:5227';
+  const apiToken = options.apiToken || '';
 
-// Read the input file
-const inputFile = 'fixtures/Writing1.docx';
-const outputFile = 'Writing1.pdf';
+  const url = new URL(`/api/convert/${format}`, baseUrl);
+  url.searchParams.set('filename', filename);
 
-fs.readFile(inputFile, (err, data) => {
-  if (err) {
-    console.error('Error reading file:', err);
-    process.exit(1);
-  }
-
-  const url = new URL('/api/convert/pdf', BASE_URL);
-  url.searchParams.set('filename', 'Writing1.docx');
-
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      'Content-Length': data.length,
-    },
+  const headers = {
+    'Content-Type': 'application/octet-stream',
   };
 
-  if (API_TOKEN) {
-    options.headers['Authorization'] = `******`;
+  if (apiToken) {
+    headers['Authorization'] = `******`;
   }
 
-  const req = http.request(url, options, (res) => {
-    if (res.statusCode !== 200) {
-      console.error(`Error: Server returned ${res.statusCode}`);
-      res.pipe(process.stderr);
-      process.exit(1);
-    }
-
-    const writeStream = fs.createWriteStream(outputFile);
-    res.pipe(writeStream);
-
-    writeStream.on('finish', () => {
-      console.log(`Successfully converted ${inputFile} to ${outputFile}`);
-    });
-
-    writeStream.on('error', (err) => {
-      console.error('Error writing file:', err);
-      process.exit(1);
-    });
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: headers,
+    body: fileData,
   });
 
-  req.on('error', (err) => {
-    console.error('Request error:', err);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Server returned ${response.status}: ${errorText}`);
+  }
+
+  // In Node.js, return Buffer; in browser, this would be a Blob
+  if (typeof Buffer !== 'undefined') {
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+  return await response.blob();
+}
+
+// CLI usage (Node.js only)
+async function main() {
+  const baseUrl = process.env.LAAS_BASE_URL || 'http://127.0.0.1:5227';
+  const apiToken = process.env.LAAS_API_TOKEN || '';
+  
+  const inputFile = 'fixtures/Writing1.docx';
+  const outputFile = 'Writing1.pdf';
+
+  try {
+    // Read input file
+    const fileData = await fs.readFile(inputFile);
+
+    // Convert document
+    const converted = await convertDocument(
+      fileData,
+      'Writing1.docx',
+      'pdf',
+      { baseUrl, apiToken }
+    );
+
+    // Write output file
+    await fs.writeFile(outputFile, converted);
+
+    console.log(`Successfully converted ${inputFile} to ${outputFile}`);
+  } catch (err) {
+    console.error('Error:', err.message);
     process.exit(1);
-  });
+  }
+}
 
-  req.write(data);
-  req.end();
-});
+// Run if called directly
+if (require.main === module) {
+  main();
+}
+
+// Export for use as a module (or in browser with bundler)
+module.exports = { convertDocument };
+
+/*
+ * Browser usage example:
+ * 
+ * <input type="file" id="fileInput">
+ * <button onclick="convert()">Convert to PDF</button>
+ * 
+ * <script type="module">
+ * import { convertDocument } from './example.js';
+ * 
+ * async function convert() {
+ *   const fileInput = document.getElementById('fileInput');
+ *   const file = fileInput.files[0];
+ *   
+ *   const converted = await convertDocument(
+ *     file,
+ *     file.name,
+ *     'pdf',
+ *     {
+ *       baseUrl: 'http://localhost:5227',
+ *       apiToken: 'your-token-here'
+ *     }
+ *   );
+ *   
+ *   // Download the converted file
+ *   const url = URL.createObjectURL(converted);
+ *   const a = document.createElement('a');
+ *   a.href = url;
+ *   a.download = file.name.replace(/\.[^.]+$/, '.pdf');
+ *   a.click();
+ *   URL.revokeObjectURL(url);
+ * }
+ * </script>
+ */
