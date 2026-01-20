@@ -1,0 +1,41 @@
+# Dockerfile for LibreOffice-as-a-Service (Go version)
+FROM golang:1.21-bookworm AS builder
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o libreoffice-as-a-service .
+
+# Runtime image
+FROM debian:bookworm-slim
+
+# Install LibreOffice and poppler-utils
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libreoffice \
+    poppler-utils \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/libreoffice-as-a-service .
+COPY --from=builder /app/public ./public
+
+# Create directory for temporary files
+RUN mkdir -p /tmp
+
+EXPOSE 5227
+
+ENV PORT=5227
+ENV BIND=0.0.0.0
+
+CMD ["./libreoffice-as-a-service"]

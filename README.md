@@ -2,6 +2,9 @@
 
 Convert documents through libreoffice (soffice) as a service
 
+> **Note**: This repository now includes both the original Node.js/Fastify version and a new Go implementation.  
+> See [README-GO.md](./README-GO.md) for details on the Go version, which offers improved simplicity and performance.
+
 ## Table of Contents
 
 - Install, Configure, Run
