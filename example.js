@@ -55,31 +55,29 @@ async function main() {
   const inputFile = 'fixtures/Writing1.docx';
   const outputFile = 'Writing1.pdf';
 
-  try {
-    // Read input file
-    const fileData = await fs.readFile(inputFile);
+  // Read input file
+  const fileData = await fs.readFile(inputFile);
 
-    // Convert document
-    const converted = await convertDocument(
-      fileData,
-      'Writing1.docx',
-      'pdf',
-      { baseUrl, apiToken }
-    );
+  // Convert document
+  const converted = await convertDocument(
+    fileData,
+    'Writing1.docx',
+    'pdf',
+    { baseUrl, apiToken }
+  );
 
-    // Write output file
-    await fs.writeFile(outputFile, converted);
+  // Write output file
+  await fs.writeFile(outputFile, converted);
 
-    console.log(`Successfully converted ${inputFile} to ${outputFile}`);
-  } catch (err) {
-    console.error('Error:', err.message);
-    process.exit(1);
-  }
+  console.log(`Successfully converted ${inputFile} to ${outputFile}`);
 }
 
 // Run if called directly
 if (require.main === module) {
-  main();
+  main().catch((err) => {
+    console.error('Error:', err.message);
+    process.exit(1);
+  });
 }
 
 // Export for use as a module (or in browser with bundler)
