@@ -27,7 +27,7 @@ if [[ "development" == "${NODE_ENV:-}" ]]; then
         serviceman add --name "${my_servicename}" --system \
         --username "$(whoami)" --path "${PATH}" -- \
         watchexec -r -e go -- -- \
-        ./libreoffice-as-a-service # -- --port "${my_port}"
+        go run . # -- --port "${my_port}"
 else
     sudo env PATH="${PATH}" \
         serviceman add --name "${my_servicename}" --system \
